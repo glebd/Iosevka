@@ -33,8 +33,17 @@ export : define [apply] : begin
 			set this.featureSelector glyphs.(oldid).featureSelector
 			set this.cmpPriority glyphs.(oldid).cmpPriority
 
-	define [composite newid] : let [parts : {}.slice.call arguments 1] : begin
-		create-glyph [fallback newid ('glyph' + [newtemp])] : glyph-construction
+	define [composite _newid] : begin
+		local parts null
+		local newid null
+		if ([typeof _newid] == 'string') : begin
+			set parts : {}.slice.call arguments 1
+			set newid _newid
+		: else
+			set parts : {}.slice.call arguments 0
+			set newid ('composite-glyph' + [newtemp])
+
+		return : create-glyph newid : glyph-construction
 			local first true
 			foreach [part : items-of parts] : begin
 				include part first
@@ -72,33 +81,35 @@ export : define [apply] : begin
 		apply-transform : Translate 0 (spacing / 2)
 		apply-transform : Italify
 	# Full-width derivatives
-	define [fwl newid unicode id] : create-glyph [fallback newid : 'fwl' + id] : glyph-construction
+	define [fwl newid unicode id shift] : create-glyph [fallback newid : 'fwl' + id] : glyph-construction
 		if unicode : assign-unicode unicode
 		include glyphs.(id)
 		set-width FULLWIDTH
+		apply-transform : Translate [fallback shift 0] 0
 
-	define [fwr newid unicode id] : create-glyph [fallback newid : 'fwr' + id] : glyph-construction
+	define [fwr newid unicode id shift] : create-glyph [fallback newid : 'fwr' + id] : glyph-construction
 		if unicode : assign-unicode unicode
 		include glyphs.(id)
 		set-width FULLWIDTH
-		apply-transform : Translate (FULLWIDTH - WIDTH) 0
+		apply-transform : Translate (FULLWIDTH - WIDTH + [fallback shift 0]) 0
 
-	define [dwl newid unicode id] : create-glyph [fallback newid : 'dwl' + id] : glyph-construction
+	define [dwl newid unicode id shift] : create-glyph [fallback newid : 'dwl' + id] : glyph-construction
 		if unicode : assign-unicode unicode
 		include glyphs.(id)
 		set-width UPM
+		apply-transform : Translate [fallback shift 0] 0
 
-	define [dwr newid unicode id] : create-glyph [fallback newid : 'dwr' + id] : glyph-construction
+	define [dwr newid unicode id shift] : create-glyph [fallback newid : 'dwr' + id] : glyph-construction
 		if unicode : assign-unicode unicode
 		include glyphs.(id)
 		set-width UPM
-		apply-transform : Translate (UPM - WIDTH) 0
+		apply-transform : Translate (UPM - WIDTH + [fallback shift 0]) 0
 
-	define [dwc newid unicode id] : create-glyph [fallback newid : 'dwc' + id] : glyph-construction
+	define [dwc newid unicode id shift] : create-glyph [fallback newid : 'dwc' + id] : glyph-construction
 		if unicode : assign-unicode unicode
 		include glyphs.(id)
 		set-width UPM
-		apply-transform : Translate ((UPM - WIDTH) / 2) 0
+		apply-transform : Translate ((UPM - WIDTH) / 2 + [fallback shift 0]) 0
 
 
 
@@ -184,10 +195,7 @@ export : define [apply] : begin
 		local mt : [mix left RIGHTSB 0.5] + (st - CORRECTION_OMIDX) * STROKE
 		local mb : [mix left RIGHTSB 0.5] + (sb + CORRECTION_OMIDX) * STROKE
 		include : dispiro
-			widths.lhs
-			g4   (mt) (top - O) [heading {.y (-1) .x (-st)}]
-			archv
-			flat (left + (STROKE - fine) * HVCONTRAST) (top - SMALLSMOOTHA) [widths fine 0]
+			flat (left + (STROKE - fine) * HVCONTRAST) (top - SMALLSMOOTHA - 0.01) [widths fine 0]
 			curl (left + (STROKE - fine) * HVCONTRAST) (0 + SMALLSMOOTHB) [widths fine 0]
 			arcvh
 			g4   (mb) O [widths.heading STROKE 0 {.y (1) .x (-sb)}]
@@ -195,7 +203,10 @@ export : define [apply] : begin
 			[if ((SMALLSMOOTHA + SMALLSMOOTHB) / top > 0.75) flat.ai flat] (RIGHTSB - OX) (0 + SMALLSMOOTHA)
 			[if ((SMALLSMOOTHA + SMALLSMOOTHB) / top > 0.75) curl.ai curl] (RIGHTSB - OX) (top - SMALLSMOOTHB)
 			arcvh
-			close
+			g4   (mt) (top - O) [widths.heading STROKE 0 {.y (-1) .x (-st)}]
+			archv
+			flat (left + (STROKE - fine) * HVCONTRAST) (top - SMALLSMOOTHA) [widths fine 0]
+			curl (left + (STROKE - fine) * HVCONTRAST) (top - SMALLSMOOTHA - 0.01) [widths fine 0]
 
 	define [OBarRightShape top right] : glyph-construction
 		include : create-glyph [OBarLeftShape top (WIDTH - [fallback right RIGHTSB])]
@@ -535,18 +546,6 @@ export : define [apply] : begin
 		.af [lambda [before after] [HookShape before after false y tight sw kkaf dontadjust]]
 	}
 
-	define [WaveShape] : params [l r cy extendy tension sw] : glyph-construction
-		local cx : mix l r 0.5
-		local wavex : (r - l) * tension
-		local endwavey : extendy * 0.97
-		include : dispiro
-			widths.center sw
-			g4 l (cy - endwavey)
-			bezcontrols.absolute (l + wavex) (cy + extendy) (cx - wavex * 0.8) (cy + extendy) 8 important
-			g4 cx cy
-			bezcontrols.absolute (cx + wavex * 0.8) (cy - extendy) (r - wavex) (cy - extendy) 8 important
-			g4 r (cy + endwavey)
-
 	define [CyrDescender x shift connex] : glyph-construction
 		local descenderOverflow : if SLAB SIDEJUT ((RIGHTSB - SB) * [fallback shift 0.1])
 		include : VBarRight (x + descenderOverflow + 0.25 * STROKE) (HALFSTROKE - LONGJUT) STROKE
@@ -625,5 +624,12 @@ export : define [apply] : begin
 		apply-transform : Scale [fallback sx (-1)] [fallback sy sx (-1)]
 		apply-transform : Translate x y
 		apply-transform : Italify
+	define ScaleAround FlipAround
+
+	define [Realign x y sx sy] : glyph-construction
+		apply-transform : Upright
+		apply-transform : Translate (-x) (-y)
+		apply-transform : Translate sx sy
+		apply-transform : Italify
 	
-	return [object select-variant italic-variant alias composite into-unicode turned dual vdual fwl fwr dwl dwr dwc Ring RingAt DotAt CircleRing CircleRingAt CircleDotAt OShape OBarLeftShape OBarRightShape LeftwardTopSerif LeftwardBottomSerif RightwardTopSerif RightwardBottomSerif CenterTopSerif CenterBottomSerif DownwardRightSerif UpwardRightSerif DownwardLeftSerif UpwardLeftSerif AIVSerifs AIHSerifs AINSerifs AICyrISerifs AIMSerifs halfXStrand xStrand nShoulderKnots nShoulder mShoulderSpiro HBar HBarTop HBarBottom HOverlayBar VBar VBarLeft VBarRight VerticalHook LegShape LeftHook HooktopLeftBar CurlyTail HCurlyTail FlatSlashShape determineMixR HookShape hookstart hookend WaveShape CyrDescender refair Fork Miniature Thinner Widen FlipAround]
+	return [object select-variant italic-variant alias composite into-unicode turned dual vdual fwl fwr dwl dwr dwc Ring RingAt DotAt CircleRing CircleRingAt CircleDotAt OShape OBarLeftShape OBarRightShape LeftwardTopSerif LeftwardBottomSerif RightwardTopSerif RightwardBottomSerif CenterTopSerif CenterBottomSerif DownwardRightSerif UpwardRightSerif DownwardLeftSerif UpwardLeftSerif AIVSerifs AIHSerifs AINSerifs AICyrISerifs AIMSerifs halfXStrand xStrand nShoulderKnots nShoulder mShoulderSpiro HBar HBarTop HBarBottom HOverlayBar VBar VBarLeft VBarRight VerticalHook LegShape LeftHook HooktopLeftBar CurlyTail HCurlyTail FlatSlashShape determineMixR HookShape hookstart hookend CyrDescender refair Fork Miniature Thinner Widen FlipAround ScaleAround Realign]

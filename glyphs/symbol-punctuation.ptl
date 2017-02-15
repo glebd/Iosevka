@@ -33,22 +33,14 @@ export : define [apply] : begin
 		save 'emsp' 0x2003
 
 	### 'Brackets'
-	local parenOutside 0.15
-	local parenInside  0.65
-	local bracketOutside 0.15
-	local bracketInside 0.9
-	local braceOutside  0.1
-	local braceInside   0.9
-
 	sketch # parenLeft
-		local p 0.6
 		include : dispiro
 			widths.lhs
-			g4 [mix SB RIGHTSB parenInside] parenTop
-			quadcontrols 1 (1 - p)
-			g4 [mix SB RIGHTSB parenOutside] parenMid
-			quadcontrols 0 p
-			g4 [mix SB RIGHTSB parenInside] parenBot
+			g4 [mix SB RIGHTSB designParameters.parenInside] [mix parenMid parenTop (1 + designParameters.parenOvershoot)]
+			quadcontrols 1 (1 - designParameters.parenCurliness)
+			g4 [mix SB RIGHTSB designParameters.parenOutside] parenMid
+			quadcontrols 0 designParameters.parenCurliness
+			g4 [mix SB RIGHTSB designParameters.parenInside] [mix parenMid parenBot (1 + designParameters.parenOvershoot)]
 		save 'parenLeft' '('
 
 	sketch # parenRight
@@ -57,9 +49,12 @@ export : define [apply] : begin
 		save 'parenRight' ')'
 
 	sketch # bracketLeft
-		include : HBarBottom [mix SB RIGHTSB bracketOutside] [mix SB RIGHTSB bracketInside] parenBot
-		include : HBarTop    [mix SB RIGHTSB bracketOutside] [mix SB RIGHTSB bracketInside] parenTop
-		include : VBarLeft   [mix SB RIGHTSB bracketOutside] parenBot parenTop
+		local l : mix SB RIGHTSB designParameters.bracketOutside
+		local r : mix SB RIGHTSB designParameters.bracketInside
+
+		include : HBarBottom l r parenBot
+		include : HBarTop    l r parenTop
+		include : VBarLeft   l parenBot parenTop
 		save 'bracketLeft' '['
 
 	sketch # bracketRight
@@ -67,46 +62,81 @@ export : define [apply] : begin
 		include : FlipAround MIDDLE parenMid
 		save 'bracketRight' ']'
 
-	sketch # braceLeft
-		local parenCenter [mix SB RIGHTSB [mix braceInside braceOutside 0.5]]
-		local radius    : [mix SB RIGHTSB braceInside] - parenCenter
+	sketch # braceLeft.straight
+		local parenCenter [mix SB RIGHTSB [mix designParameters.braceInside designParameters.braceOutside 0.5]]
+		local radius    : [mix SB RIGHTSB designParameters.braceInside] - parenCenter
+		local top : mix parenMid parenTop (1 + designParameters.braceOvershoot)
+		local bot : mix parenMid parenBot (1 + designParameters.braceOvershoot)
 
 		include : dispiro
-			flat [mix SB RIGHTSB braceInside] (parenTop - HALFSTROKE) [widths.heading HALFSTROKE HALFSTROKE LEFTWARD]
-			curl ([mix SB RIGHTSB braceInside] - 0.01) (parenTop - HALFSTROKE) [widths.heading HALFSTROKE HALFSTROKE LEFTWARD]
+			straight.left.start [mix SB RIGHTSB designParameters.braceInside] (top - HALFSTROKE) [widths.heading HALFSTROKE HALFSTROKE LEFTWARD]
 			archv
-			flat parenCenter (parenTop - radius) [heading DOWNWARD]
+			flat parenCenter (top - radius) [heading DOWNWARD]
 			curl parenCenter (parenMid + radius) [heading DOWNWARD]
 			arcvh
-			flat ([mix SB RIGHTSB braceOutside] + 0.01) parenMid [heading LEFTWARD]
-			curl [mix SB RIGHTSB braceOutside] parenMid [heading LEFTWARD]
+			straight.left.end [mix SB RIGHTSB designParameters.braceOutside] parenMid [heading LEFTWARD]
 
 		include : dispiro
-			flat [mix SB RIGHTSB braceInside] (parenBot + HALFSTROKE) [widths.heading HALFSTROKE HALFSTROKE LEFTWARD]
-			curl ([mix SB RIGHTSB braceInside] - 0.01) (parenBot + HALFSTROKE) [widths.heading HALFSTROKE HALFSTROKE LEFTWARD]
+			straight.left.start [mix SB RIGHTSB designParameters.braceInside] (bot + HALFSTROKE) [widths.heading HALFSTROKE HALFSTROKE LEFTWARD]
 			archv
-			flat parenCenter (parenBot + radius) [heading UPWARD]
+			flat parenCenter (bot + radius) [heading UPWARD]
 			curl parenCenter (parenMid - radius) [heading UPWARD]
 			arcvh
-			flat ([mix SB RIGHTSB braceOutside] + 0.01) parenMid [heading LEFTWARD]
-			curl [mix SB RIGHTSB braceOutside] parenMid [heading LEFTWARD]
-		save 'braceLeft' '{'
+			straight.left.end [mix SB RIGHTSB designParameters.braceOutside] parenMid [heading LEFTWARD]
+		save 'braceLeft.straight'
 
-	sketch # braceRight
-		include glyphs.braceLeft
-		include : FlipAround MIDDLE parenMid
-		save 'braceRight' '}'
+	sketch # braceLeft.curly
+		local xIns : mix SB RIGHTSB [mix designParameters.braceOutside designParameters.braceInside 1]
+		local xOus : mix SB RIGHTSB [mix designParameters.braceInside designParameters.braceOutside 1]
+		local m1   : mix SB RIGHTSB [mix designParameters.braceInside designParameters.braceOutside designParameters.braceCurlyM1]
+		local m2   : mix SB RIGHTSB [mix designParameters.braceInside designParameters.braceOutside designParameters.braceCurlyM2]
+		local braceRadiusLowLimit : (parenTop - parenMid - STROKE) * (1 / 3) + HALFSTROKE
+		local radius1 : Math.min (xIns - m1) braceRadiusLowLimit
+		local radius2 : [Math.min (m2 - xOus) braceRadiusLowLimit] - HALFSTROKE
+		local ess : mix STROKE ESS 0.25
+		local top : mix parenMid parenTop (1 + designParameters.braceOvershoot)
+		local bot : mix parenMid parenBot (1 + designParameters.braceOvershoot)
+		include : dispiro
+			straight.left.start xIns (top - HALFSTROKE) [widths.heading HALFSTROKE HALFSTROKE LEFTWARD]
+			archv
+			g4.down.mid m1 (top - radius1) [heading DOWNWARD]
+			alsothru 0.5 0.5 [widths (ess / 2) (ess / 2)]
+			g4.down.mid m2 (parenMid + radius2) [widths.heading HALFSTROKE HALFSTROKE DOWNWARD]
+			arcvh
+			straight.left.end xOus parenMid [heading LEFTWARD]
+
+		include : dispiro
+			straight.left.start xIns (bot + HALFSTROKE) [widths.heading HALFSTROKE HALFSTROKE LEFTWARD]
+			archv
+			g4.up.mid m1 (bot + radius1) [heading UPWARD]
+			alsothru 0.5 0.5 [widths (ess / 2) (ess / 2)]
+			g4.up.mid m2 (parenMid - radius2) [widths.heading HALFSTROKE HALFSTROKE UPWARD]
+			arcvh
+			straight.left.end xOus parenMid [heading LEFTWARD]
+		save 'braceLeft.curly'
+
+	composite 'braceRight.straight' glyphs.'braceLeft.straight' [FlipAround MIDDLE parenMid]
+	composite 'braceRight.curly' glyphs.'braceLeft.curly' [FlipAround MIDDLE parenMid]
+	
+	select-variant 'braceLeft' '{' 'curly' {
+		.cv36 'braceLeft.straight'
+		.cv37 'braceLeft.curly'
+	}
+	select-variant 'braceRight' '}' 'curly' {
+		.cv36 'braceRight.straight'
+		.cv37 'braceRight.curly'
+	}
 
 	sketch # angleLeft
-		local fatten : Math.hypot 1 (([mix SB RIGHTSB : parenInside - parenOutside] - O) / (parenTop - parenMid))
+		local fatten : Math.hypot 1 (([mix SB RIGHTSB : designParameters.parenInside - designParameters.parenOutside] - O) / (parenTop - parenMid))
 		include : dispiro
 			widths.lhs OPERATORSTROKE
-			flat [mix SB RIGHTSB parenInside] parenTop
-			curl ([mix SB RIGHTSB parenOutside] + O) parenMid [widths.heading (OPERATORSTROKE * fatten) 0 DOWNWARD]
+			flat [mix SB RIGHTSB designParameters.parenInside] parenTop
+			curl ([mix SB RIGHTSB designParameters.parenOutside] + O) parenMid [widths.heading (OPERATORSTROKE * fatten) 0 DOWNWARD]
 		include : dispiro
 			widths.rhs OPERATORSTROKE
-			flat [mix SB RIGHTSB parenInside] parenBot
-			curl ([mix SB RIGHTSB parenOutside] + O) parenMid [widths.heading 0 (OPERATORSTROKE * fatten) UPWARD]
+			flat [mix SB RIGHTSB designParameters.parenInside] parenBot
+			curl ([mix SB RIGHTSB designParameters.parenOutside] + O) parenMid [widths.heading 0 (OPERATORSTROKE * fatten) UPWARD]
 		save 'angleLeft' 0x2329
 	alias 'mangleLeft' 0x27E8 'angleLeft'
 
@@ -117,13 +147,13 @@ export : define [apply] : begin
 	dual 'dblangleRight' 0x27EB 'angleRight' (WIDTH * 0.35)
 
 	sketch # ceilingLeft
-		include : HBarTop    [mix SB RIGHTSB bracketOutside] [mix SB RIGHTSB bracketInside] parenTop
-		include : VBarLeft   [mix SB RIGHTSB bracketOutside] parenBot parenTop
+		include : HBarTop    [mix SB RIGHTSB designParameters.bracketOutside] [mix SB RIGHTSB designParameters.bracketInside] parenTop
+		include : VBarLeft   [mix SB RIGHTSB designParameters.bracketOutside] parenBot parenTop
 		save 'ceilingLeft' 0x2308
 
 	sketch # floorLeft
-		include : HBarBottom [mix SB RIGHTSB bracketOutside] [mix SB RIGHTSB bracketInside] parenBot
-		include : VBarLeft   [mix SB RIGHTSB bracketOutside] parenBot parenTop
+		include : HBarBottom [mix SB RIGHTSB designParameters.bracketOutside] [mix SB RIGHTSB designParameters.bracketInside] parenBot
+		include : VBarLeft   [mix SB RIGHTSB designParameters.bracketOutside] parenBot parenTop
 		save 'floorLeft' 0x230A
 	turned 'floorRight' 0x230B 'ceilingLeft' MIDDLE parenMid
 	turned 'ceilingRight' 0x2309 'floorLeft' MIDDLE parenMid
@@ -308,7 +338,7 @@ export : define [apply] : begin
 			g4.down.end [mix SB RIGHTSB r] 0 [widths.heading 0 fine DOWNWARD]
 		save 'ampersand' '&'
 
-	sketch # at
+	sketch # at.long
 		set-width WIDTH
 
 		local top parenTop
@@ -343,7 +373,105 @@ export : define [apply] : begin
 			arcvh
 			flat (MIDDLE + CORRECTION_OMIDS) (bot + O) [widths STROKE 0 ]
 			curl (RIGHTSB - HALFSTROKE + TANSLANT * sw) (bot + O)
-		save 'at' '@'
+		save 'at.long'
+
+	sketch # at.tight
+		set-width WIDTH
+
+		local top parenTop
+		local bot parenBot
+		local otop : mix bot top 0.75
+		local obot : mix top bot 0.8
+
+		local sw : adviceBlackness 4
+		local swh : adviceBlackness 3.75
+		local left : SB - sw * HVCONTRAST / 3
+		local right : RIGHTSB + sw * HVCONTRAST / 3
+
+		local m1 : [mix (left + sw / 2) (right - sw / 2) (1 / 3)] - sw * HVCONTRAST / 2
+		local m2 : [mix (left + sw / 2) (right - sw / 2) (2 / 3)] + sw * HVCONTRAST / 2
+
+		local sma : SMOOTHA * ((m2 - m1) / (RIGHTSB - SB) * 1.1)
+		local smb : SMOOTHB * ((m2 - m1) / (RIGHTSB - SB) * 1.1)
+
+		include : dispiro
+			widths.lhs sw
+			flat m2 (obot - O) [heading UPWARD]
+			curl m2 (otop - smb)
+			arcvh
+			g4   (MIDDLE - CORRECTION_OMIDX * sw) (otop - O)
+			archv
+			flat m1 (otop - sma)
+			curl m1 (obot + smb)
+			arcvh
+			flat MIDDLE obot
+			curl (right - (m2 - m1) / 2) obot
+			archv
+			flat right (obot + sma)
+			curl right (top - SMOOTHB)
+			arcvh
+			g4   (MIDDLE - CORRECTION_OMIDS) (top - O) [widths swh 0]
+			archv
+			flat left (top - SMOOTHA) [widths sw 0]
+			curl left (bot + SMOOTHB)
+			arcvh
+			flat (MIDDLE + CORRECTION_OMIDS) (bot + O) [widths swh 0 ]
+			curl (right - HALFSTROKE + TANSLANT * sw) (bot + O)
+		save 'at.fourfold'
+
+	sketch # at.short
+		set-width WIDTH
+
+		local top operTop
+		local obot operBot
+		local otop [mix obot top 0.675]
+
+		local sw : adviceBlackness 3.5
+		local m1 : [mix (SB + sw) (RIGHTSB - sw) 0.53] + sw / 2
+		local m2 : [mix SB m1 0.5] + TANSLANT * sw
+
+		local sma : SMOOTHA * ((m1 - SB) / (RIGHTSB - SB) * 1.1)
+		local smb : SMOOTHB * ((m1 - SB) / (RIGHTSB - SB) * 1.1)
+		local atTurnBot (obot - sma / 4)
+
+		local shrink 0.6
+
+		include : dispiro
+			straight.up.start (m1 - (sw * (1 - shrink) * HVCONTRAST)) (otop - smb) [widths.heading (sw * shrink) 0 UPWARD]
+			arcvh
+			g4 (m2 - sw * TANSLANT) (otop - O) [widths.heading sw 0 LEFTWARD]
+			archv
+			flat SB (otop - sma)
+			curl SB (obot + smb)
+			arcvh
+			g4 (m2 - sw * TANSLANT) (obot + O) [heading RIGHTWARD]
+			archv
+			straight.up.end (m1 - (sw * (1 - shrink) * HVCONTRAST)) (obot + sma) [widths.heading (sw * shrink) 0 UPWARD]
+		
+		include : dispiro
+			widths.lhs sw
+			corner m1 (atTurnBot + sma) [heading UPWARD]
+			corner m1 (otop - smb) [heading UPWARD]
+			corner m1 otop [widths.heading (sw * shrink) 0 UPWARD]
+		
+		include : dispiro
+			widths.lhs (sw * shrink)
+			straight.down.start (m1 - sw * shrink * HVCONTRAST) (atTurnBot + sma) [heading DOWNWARD]
+			arcvh
+			g4 ([mix (m1 - sw * HVCONTRAST) RIGHTSB 0.5] + CORRECTION_OMIDX * sw) (atTurnBot + O) [widths.lhs sw]
+			archv
+			flat RIGHTSB (atTurnBot + sma)
+			curl RIGHTSB (top - SMOOTHB)
+			hookend (top - O)
+			g4 SB (top - HOOK)
+
+		save 'at.short'
+	
+	select-variant 'at' '@' 'short' {
+		.cv31 'at.long'
+		.cv32 'at.fourfold'
+		.cv33 'at.short'
+	}
 
 	sketch # paragraph
 		set-width WIDTH
@@ -418,25 +546,44 @@ export : define [apply] : begin
 		include : VBar [mix SB RIGHTSB 0.7] (parenBot + fine) (parenTop - fine) fine
 		save 'numbersign' '#'
 
-	sketch # slash
-		local cor : HVCONTRAST / [Math.sqrt (1 - [Math.pow ((RIGHTSB - SB - STROKE) / (parenTop - parenBot)) 2])]
-		start-from SB parenBot
-		line-to (SB + STROKE * cor) parenBot
-		line-to RIGHTSB parenTop
-		line-to (RIGHTSB - STROKE * cor) parenTop
+	# Slashes
+	define slashDefautLeft   : SB + HALFSTROKE
+	define slashDefaultRight : RIGHTSB - HALFSTROKE
+	define [SlashShape l r] : glyph-construction
+		local cor : (1 / 2) * HVCONTRAST / [Math.sqrt (1 - [Math.pow ((r - l - STROKE) / (parenTop - parenBot)) 2])]
+		start-from (l - STROKE * cor) parenBot
+		line-to    (l + STROKE * cor) parenBot
+		line-to    (r + STROKE * cor) parenTop
+		line-to    (r - STROKE * cor) parenTop
 		reverse-last
-		save 'slash' '/'
 
+	sketch # slash
+		include : SlashShape slashDefautLeft slashDefaultRight
+		save 'slash' '/'
+		save 'solidus' 0x2044
+	sketch # slash.left
+		include : SlashShape slashDefautLeft WIDTH
+		save 'slash.left'
+	sketch # slash.right
+		include : SlashShape 0 slashDefaultRight
+		save 'slash.right'
+
+	define [BackslashShape l r] : glyph-construction
+		local cor : (1 / 2) * HVCONTRAST / [Math.sqrt (1 - [Math.pow ((r - l - STROKE) / (parenTop - parenBot)) 2])]
+		start-from (l - STROKE * cor) parenTop
+		line-to    (l + STROKE * cor) parenTop
+		line-to    (r + STROKE * cor) parenBot
+		line-to    (r - STROKE * cor) parenBot
+	local backslashWidth : (slashDefaultRight - slashDefautLeft) * (1 + TANSLANT * 2)
 	sketch # backslash
-		local width : (RIGHTSB - SB) * (1 + TANSLANT * 2)
-		local cor : HVCONTRAST / [Math.sqrt (1 - [Math.pow ((width - STROKE) / (parenTop - parenBot)) 2])]
-		start-from (MIDDLE - width / 2) parenTop
-		line-to (MIDDLE - width / 2 + STROKE * cor) parenTop
-		line-to (MIDDLE + width / 2) parenBot
-		line-to (MIDDLE + width / 2 - STROKE * cor) parenBot
-		reverse-last
+		include : BackslashShape (MIDDLE - backslashWidth / 2) (MIDDLE + backslashWidth / 2)
 		save 'backslash' "\\"
-	alias 'solidus' 0x2044 'slash'
+	sketch # backslash.left
+		include : BackslashShape (MIDDLE - backslashWidth / 2) WIDTH
+		save 'backslash.left'
+	sketch # backslash.right
+		include : BackslashShape 0 (MIDDLE + backslashWidth / 2)
+		save 'backslash.right'
 
 
 	### 'Dashes'
@@ -485,10 +632,11 @@ export : define [apply] : begin
 	sketch # interpunct
 		set-width FULLWIDTH
 		include : Ring (parenMid + PERIODRADIUS - O) (parenMid - PERIODRADIUS + O) (FWMIDDLE - PERIODRADIUS + O) (FWMIDDLE + PERIODRADIUS - O) true
+		save 'period.center'
 		save 'interpunct' 0xB7
-	alias 'bullet' 0x2022 'interpunct'
-	alias 'hyphenpoint' 0x2027 'interpunct'
-	alias 'greekbullet' 0x387 'interpunct'
+		save 'greekbullet' 0x387
+		save 'bullet' 0x2022
+		save 'hyphenpoint' 0x2027
 
 	sketch # whitebullet
 		set-width FULLWIDTH
@@ -781,10 +929,15 @@ export : define [apply] : begin
 		apply-transform : Translate (MIDDLE) (XH + ACCENT)
 		apply-transform : Italify
 
-	composite 'asciitilde.low' glyphs.'asciitilde.high' [Upright] [Translate 0 (parenMid - XH - ACCENT)] [Italify]
+	composite 'asciitilde.low' glyphs.'asciitilde.high' [Upright] [Translate 0 (parenMid - XH - ACCENT)] [Italify] markset.plus
 	select-variant 'asciitilde' '~' 'low'  {
 		.cv16 'asciitilde.high'
 		.cv17 'asciitilde.low'
+	}
+	composite 'asciicaret.low' glyphs.'asciicaret.high' [Upright] [Translate 0 (parenMid - XH - ACCENT)] [Italify] markset.plus
+	select-variant 'asciicaret' '^' 'high'  {
+		.cv29 'asciicaret.high'
+		.cv30 'asciicaret.low'
 	}
 
 	composite 'degree' glyphs.space glyphs.ringAbove MarkZoom [into-unicode 0xB0]
@@ -804,8 +957,8 @@ export : define [apply] : begin
 	dwc nothing 0xFF1B 'semicolon'
 	dwl nothing 0xFF0C 'comma'
 	dwl nothing 0xFF0E 'period'
-	dwr nothing 0xFF08 'parenLeft'
-	dwl nothing 0xFF09 'parenRight'
+	dwr nothing 0xFF08 'parenLeft' (-WIDTH * 0.15)
+	dwl nothing 0xFF09 'parenRight' (WIDTH * 0.15)
 
 	local r : Math.max PERIODRADIUS (WIDTH * 0.225)
 	local ry : r * 0.25
@@ -831,15 +984,13 @@ export : define [apply] : begin
 		branch
 			save 'cjkcomma' 0xFF64
 
-	local bracketOutside 0.05
-	local bracketInside 0.95
 	local cjkqd 0.75
 	local cjkqd2 0.97
 	local ideotop : para.ideoMid + (parenTop - parenMid)
 	local ideobot : para.ideoMid - (parenTop - parenMid)
 	sketch # cjkSingleQuoteLeft
-		include : HBarTop    [mix SB RIGHTSB bracketOutside] [mix SB RIGHTSB bracketInside] [mix ideobot ideotop cjkqd2]
-		include : VBarLeft   [mix SB RIGHTSB bracketOutside] [mix ideotop ideobot cjkqd] [mix ideobot ideotop cjkqd2]
+		include : HBarTop    [mix SB RIGHTSB designParameters.bracketOutside] [mix SB RIGHTSB designParameters.bracketInside] [mix ideobot ideotop cjkqd2]
+		include : VBarLeft   [mix SB RIGHTSB designParameters.bracketOutside] [mix ideotop ideobot cjkqd] [mix ideobot ideotop cjkqd2]
 		save 'cjkSingleQuoteLeft' 0xFF62
 	sketch # cjkSingleQuoteRight
 		include glyphs.cjkSingleQuoteLeft
@@ -849,8 +1000,8 @@ export : define [apply] : begin
 	sketch # cjkDoubleQuoteLeft
 		local sw : adviceBlackness 6
 		local dw : [Math.max (WIDTH * 0.175) [adviceBlackness 3.25]] + sw * 2
-		local outside : mix SB RIGHTSB bracketOutside
-		local inside : mix SB RIGHTSB bracketInside
+		local outside : mix SB RIGHTSB designParameters.bracketOutside
+		local inside : mix SB RIGHTSB designParameters.bracketInside
 		local top : mix ideobot ideotop cjkqd2
 		local bottom : mix ideotop ideobot cjkqd
 
