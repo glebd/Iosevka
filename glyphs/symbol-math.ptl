@@ -91,11 +91,33 @@ export : define [apply] : begin
 		local k 1
 		include : OShape (parenMid + (RIGHTSB - SB) * 0.5 + sw * k) (parenMid - (RIGHTSB - SB) * 0.5 - sw * k) (SB - sw * k) (RIGHTSB + sw * k) sw (SMALLSMOOTHA * 3) (SMALLSMOOTHB * 3)
 		save 'mathO'
+	
 	sketch # plus
 		include markset.plus
 		include : HBar SB RIGHTSB parenMid OPERATORSTROKE
 		include : VBar MIDDLE plusTop plusBot OPERATORSTROKE
 		save 'plus' '+'
+	sketch # ligplus.lc
+		include markset.plus
+		include : HBar SB (WIDTH - O) parenMid OPERATORSTROKE
+		include : VBar MIDDLE plusTop plusBot OPERATORSTROKE
+		save 'ligplus.lc'
+	sketch # ligplus.cc
+		include markset.plus
+		include : HBar O (WIDTH - O) parenMid OPERATORSTROKE
+		include : VBar MIDDLE plusTop plusBot OPERATORSTROKE
+		save 'ligplus.cc'
+	sketch # ligplus.cr
+		include markset.plus
+		include : HBar O RIGHTSB parenMid OPERATORSTROKE
+		include : VBar MIDDLE plusTop plusBot OPERATORSTROKE
+		save 'ligplus.cr'
+	sketch # ligplus.jr
+		include markset.plus
+		include : HBar (-SB + O) RIGHTSB parenMid OPERATORSTROKE
+		include : VBar MIDDLE plusTop plusBot OPERATORSTROKE
+		save 'ligplus.jr'
+
 	sketch # minus
 		include markset.plus
 		include : HBar SB RIGHTSB parenMid OPERATORSTROKE
@@ -115,31 +137,48 @@ export : define [apply] : begin
 		include : HBar SB RIGHTSB (parenMid - equalHalfSpace) OPERATORSTROKE
 		save 'equal' '='
 	
-	sketch # less
-		include markset.plus
-		local top : mix parenMid parenTop 0.5
-		local bot : mix parenMid parenBot 0.5
-		local exp : Math.sqrt : 1 + (top - bot) / (2 * (RIGHTSB - SB)) * (top - bot) / (2 * (RIGHTSB - SB))
+	do "less and greater"
+		define lessSlantness : 1/4 * (parenTop - parenBot) / (RIGHTSB - SB)
+
+		define [LessShape top bot l r] : glyph-construction
+			local exp : Math.sqrt : 1 + (top - bot) / (2 * (r - l)) * (top - bot) / (2 * (r - l))
+			include : dispiro
+				widths.center OPERATORSTROKE
+				flat r top
+				curl l [mix top bot 0.5] [widths.heading (OPERATORSTROKE / 2 * exp) (OPERATORSTROKE / 2 * exp) LEFTWARD]
+			
+			include : dispiro
+				widths.center OPERATORSTROKE
+				flat r bot
+				curl l [mix top bot 0.5] [widths.heading (OPERATORSTROKE / 2 * exp) (OPERATORSTROKE / 2 * exp) LEFTWARD]
+
+		sketch # less
+			include markset.plus
+			local dH : lessSlantness * (RIGHTSB - SB)
+			include : LessShape (parenMid + dH) (parenMid - dH) SB RIGHTSB
+			save 'less' '<'
 		
-		include : dispiro
-			widths.center OPERATORSTROKE
-			flat RIGHTSB top
-			curl SB [mix top bot 0.5] [widths.heading (OPERATORSTROKE / 2 * exp) (OPERATORSTROKE / 2 * exp) LEFTWARD]
+		sketch # greater
+			include glyphs.less AS_BASE
+			include : FlipAround MIDDLE parenMid
+			save 'greater' '>'
 		
-		include : dispiro
-			widths.center OPERATORSTROKE
-			flat RIGHTSB bot
-			curl SB [mix top bot 0.5] [widths.heading (OPERATORSTROKE / 2 * exp) (OPERATORSTROKE / 2 * exp) LEFTWARD]
-		save 'less' '<'
-	
-	sketch # greater
-		include markset.plus
-		local top : mix 0 CAP 0.75
-		local bot : mix 0 CAP 0.1
+		local trigLeft : mix SB RIGHTSB (1/6)
+		local trigRight : WIDTH * 1.5 - OPERATORSTROKE * 1.5 * HVCONTRAST
+		local dH : lessSlantness * (trigRight - trigLeft)
+		sketch # ligless.trig
+			include markset.plus
+			include : LessShape (parenMid + dH) (parenMid - dH) trigLeft trigRight
+			save 'ligless.trig'
 		
-		include glyphs.less
-		include : FlipAround MIDDLE parenMid
-		save 'greater' '>'
+		sketch # ligbar.trig
+			include : VBar MIDDLE (parenMid + dH + OPERATORSTROKE) (parenMid - dH - OPERATORSTROKE) OPERATORSTROKE
+			save 'ligbar.trig'
+		
+		sketch # liggreater.trig
+			include glyphs.'ligless.trig' AS_BASE
+			include : FlipAround MIDDLE parenMid
+			save 'liggreater.trig'
 
 	sketch # multiply
 		include markset.plus
@@ -167,10 +206,11 @@ export : define [apply] : begin
 	
 	composite 'mathAsterisk' glyphs.'smallasterisk.low' [into-unicode 0x2217]
 	
-	composite 'mathoplus' glyphs.mathO glyphs.plus [into-unicode 0x2295]
-	composite 'mathominus' glyphs.mathO glyphs.minus [into-unicode 0x2296]
-	composite 'mathoasterisk' glyphs.mathO glyphs.mathAsterisk [into-unicode 0x229B]
-	composite 'mathodot' glyphs.mathO [Ring (parenMid + PERIODRADIUS - O) (parenMid - PERIODRADIUS + O) (MIDDLE - PERIODRADIUS + O) (MIDDLE + PERIODRADIUS - O) true] [into-unicode 0x2299]
+	composite glyphs.mathO glyphs.plus [into-unicode 0x2295]
+	composite glyphs.mathO glyphs.minus [into-unicode 0x2296]
+	composite glyphs.mathO glyphs.mathAsterisk [into-unicode 0x229B]
+	composite glyphs.mathO glyphs.hwsmallwhitecircle [into-unicode 0x229A]
+	composite glyphs.mathO [Ring (parenMid + PERIODRADIUS - O) (parenMid - PERIODRADIUS + O) (MIDDLE - PERIODRADIUS + O) (MIDDLE + PERIODRADIUS - O) true] [into-unicode 0x2299]
 	
 	sketch # negate
 		include glyphs.minus
@@ -197,45 +237,48 @@ export : define [apply] : begin
 	turned 'cap' 0x2229 'cup' MIDDLE parenMid
 
 	### Logicals
-	sketch # vdash
-		include markset.plus
-		include : HBar SB RIGHTSB parenMid OPERATORSTROKE
-		include : VBarLeft SB plusTop plusBot OPERATORSTROKE
-		save 'vdash' 0x22A2
-	turned 'dashv' 0x22A3 'vdash' MIDDLE parenMid
+	do "Logicals"
+		local top : mix parenMid operTop 0.625
+		local bot : mix parenMid operBot 0.625
+		sketch # vdash
+			include markset.plus
+			include : HBar SB RIGHTSB parenMid OPERATORSTROKE
+			include : VBarLeft SB top bot OPERATORSTROKE
+			save 'vdash' 0x22A2
+		turned 'dashv' 0x22A3 'vdash' MIDDLE parenMid
 
-	sketch # assert
-		include markset.plus
-		local l : mix MIDDLE SB designParameters.logic_narrow_shrink
-		local r : mix MIDDLE RIGHTSB designParameters.logic_narrow_shrink
-		include : HBar l r parenMid OPERATORSTROKE
-		include : VBarLeft l plusTop plusBot OPERATORSTROKE
-		save 'assert' 0x22A6
+		sketch # assert
+			include markset.plus
+			local l : mix MIDDLE SB designParameters.logic_narrow_shrink
+			local r : mix MIDDLE RIGHTSB designParameters.logic_narrow_shrink
+			include : HBar l r parenMid OPERATORSTROKE
+			include : VBarLeft l top bot OPERATORSTROKE
+			save 'assert' 0x22A6
 
-	sketch # models
-		include markset.plus
-		local l : mix MIDDLE SB designParameters.logic_narrow_shrink
-		local r : mix MIDDLE RIGHTSB designParameters.logic_narrow_shrink
-		include : HBar l r [mix parenMid plusTop (1 / 3)] OPERATORSTROKE
-		include : HBar l r [mix parenMid plusBot (1 / 3)] OPERATORSTROKE
-		include : VBarLeft l plusTop plusBot OPERATORSTROKE
-		save 'models' 0x22A7
+		sketch # models
+			include markset.plus
+			local l : mix MIDDLE SB designParameters.logic_narrow_shrink
+			local r : mix MIDDLE RIGHTSB designParameters.logic_narrow_shrink
+			include : HBar l r [mix parenMid top (1 / 3)] OPERATORSTROKE
+			include : HBar l r [mix parenMid bot (1 / 3)] OPERATORSTROKE
+			include : VBarLeft l top bot OPERATORSTROKE
+			save 'models' 0x22A7
 
-	sketch # tautalogy
-		include markset.plus
-		local l : mix MIDDLE SB 1
-		local r : mix MIDDLE RIGHTSB 1
-		include : HBar l r [mix parenMid plusTop (1 / 3)] OPERATORSTROKE
-		include : HBar l r [mix parenMid plusBot (1 / 3)] OPERATORSTROKE
-		include : VBarLeft l plusTop plusBot OPERATORSTROKE
-		save 'tautalogy' 0x22A8
+		sketch # tautology
+			include markset.plus
+			local l : mix MIDDLE SB 1
+			local r : mix MIDDLE RIGHTSB 1
+			include : HBar l r [mix parenMid top (1 / 3)] OPERATORSTROKE
+			include : HBar l r [mix parenMid bot (1 / 3)] OPERATORSTROKE
+			include : VBarLeft l top bot OPERATORSTROKE
+			save 'tautology' 0x22A8
 
-	sketch # top
-		include markset.plus
-		include : HBarTop SB RIGHTSB plusTop OPERATORSTROKE
-		include : VBar MIDDLE plusTop plusBot OPERATORSTROKE
-		save 'top' 0x22A4
-	composite 'bot' glyphs.top [FlipAround MIDDLE parenMid] [into-unicode 0x22A5]
+		sketch # top
+			include markset.plus
+			include : HBarTop SB RIGHTSB top OPERATORSTROKE
+			include : VBar MIDDLE top bot OPERATORSTROKE
+			save 'top' 0x22A4
+		composite 'bot' glyphs.top [FlipAround MIDDLE parenMid] [into-unicode 0x22A5]
 
 	sketch # lesseq
 		include markset.plus
@@ -299,8 +342,8 @@ export : define [apply] : begin
 	
 	sketch # subst
 		include markset.plus
-		local top : mix parenMid parenTop 0.5
-		local bot : mix parenMid parenBot 0.5
+		local top : mix parenMid operTop 0.625
+		local bot : mix parenMid operBot 0.625
 		include : dispiro
 			widths.lhs OPERATORSTROKE
 			flat RIGHTSB top [heading LEFTWARD]
@@ -367,7 +410,7 @@ export : define [apply] : begin
 	notGlyph 'noteq' 0x2260 'equal'
 	notGlyph 'notident' 0x2262 'ident'
 	notGlyph 'notvdash' 0x22AC 'vdash'
-	notGlyph 'nottaut' 0x22AD 'tautalogy'
+	notGlyph 'nottaut' 0x22AD 'tautology'
 	notGlyph.left 'notless' 0x226E 'less'
 	notGlyph.right 'notgreater' 0x226F 'greater'
 	notGlyph 'notapprox' 0x2249 'approx' [mix parenMid operTop 0.75] [mix parenMid operBot 0.75]
