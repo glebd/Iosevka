@@ -1,4 +1,4 @@
-VERSION = 1.12.5
+VERSION = 1.13.1
 export VERSION
 
 start : __start
@@ -26,6 +26,9 @@ test : $(BUILD)/targets.mk
 
 fw : $(BUILD)/targets.mk
 	@$(MAKE) -f utility/standard.mk fw
+
+scripts :
+	@$(MAKE) -f utility/scripts.mk scripts
 
 sample-images :
 	@$(MAKE) -f utility/standard.mk sample-images
