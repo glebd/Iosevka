@@ -8,10 +8,10 @@ manufacturer = 'Belleve Invis'
 designer = 'Belleve Invis'
 description = 'Spatial efficient monospace font family for programming. Built from code. http://be5invis.github.io/Iosevka'
 
-leading = 1100     # Default line height times 1000.
+leading = 1110     # Default line height times 1000.
 descenderPad = 0   # Additional line height, added to descender.
 width = 520        # Character width. Increase this if you think that Iosevka is too narrow.
-cap = 700          # Cap height (as well as ascender).
+cap = 680          # Cap height (as well as ascender).
 xheight = 510      # X-height.
 #descender = -205  # Depth of descender. Currently unused.
 
