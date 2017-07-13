@@ -11,8 +11,8 @@ description = 'Spatial efficient monospace font family for programming. Built fr
 leading = 1150     # Default line height times 1000.
 descenderPad = 0   # Additional line height, added to descender.
 width = 500        # Character width. Increase this if you think that Iosevka is too narrow.
-cap = 680          # Cap height (as well as ascender).
-xheight = 510      # X-height.
+cap = 685          # Cap height (as well as ascender).
+xheight = 520      # X-height.
 #descender = -205  # Depth of descender. Currently unused.
 
 ideoMid  = 365
@@ -248,8 +248,8 @@ family = 'CC'
 ### Widths
 # Expanded : I heard someone want it being wider...
 [wd-expanded.multiplies]
-width = 1.15
-sb = 1.15
+width = 1.2
+sb = 1.2
 [expanded]
 inherits = ['wd-expanded']
 [expanded.adds]
