@@ -67,7 +67,7 @@ isItalic = false   # Use italic shapes?
 
 lllcrowdedness = 3.33333333
 
-spacing = 2 # Spacing indicator
+spacing = 1 # Spacing indicator
 
 # Powerline-specific parameters
 powerlineScaleY = 1 # Vertical scale
