@@ -41,8 +41,8 @@ superness = 2.2    # Superness of arcs.
 
 barpos = 0.525     # Position of the middle bar in most letters, like `E`.
 overlaypos = 0.52  # Position of the overlay mark.
-ebarpos = 0.50     # Position of the middle bar in `e`.
-gbarpos = 0.40
+ebarpos = 0.53     # Position of the middle bar in `e`.
+gbarpos = 0.45
 pbarpos = 0.53
 fivebarpos = 0.64
 
