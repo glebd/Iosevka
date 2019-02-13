@@ -39,7 +39,8 @@ ref/
 pages/
 releases/
 release-archives/
-snapshot/assets/
+testdrive/iosevka*
+snapshot/iosevka*
 snapshot/index.css
 
 # Generated scripts
@@ -57,8 +58,8 @@ support/utils.js
 meta/*.js
 meta/feature/*.js
 glyphs/*.js
-testdrive/assets
 
 package-lock.json
 private.toml
+private-build-plans.toml
 private.mk

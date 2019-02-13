@@ -1,17 +1,17 @@
-import './support/glyph' as Glyph
-import './support/point' as Point
-import './support/spirokit' as spirokit
-import './support/transform' as : Transform && [object [transformPoint tp] [untransform utp] inverse]
-import './support/anchor' as Anchor
-import './support/monotonic-interpolate' as smoothreg
-import './support/fairify' as fairify
+import '../support/glyph' as Glyph
+import '../support/point' as Point
+import '../support/spirokit' as spirokit
+import '../support/transform' as : Transform && [object [transformPoint tp] [untransform utp] inverse]
+import '../support/anchor' as Anchor
+import '../support/monotonic-interpolate' as smoothreg
+import '../support/fairify' as fairify
 
-import [mix linreg clamp fallback TempFont includeGlyphPart compsiteMarkSet] from './support/utils'
-import [calculateMetrics setFontMetrics] from './meta/aesthetics'
-import [assignFontNames] from './meta/naming'
-import './meta/features' as Features
+import [mix linreg clamp fallback TempFont includeGlyphPart compsiteMarkSet] from '../support/utils'
+import [calculateMetrics setFontMetrics] from '../meta/aesthetics'
+import [assignFontNames] from '../meta/naming'
+import '../meta/features' as Features
 
-$$include 'meta/macros.ptl'
+$$include '../meta/macros.ptl'
 
 define [$NamedParameterPair$ l r] : begin
 	set this.left l
@@ -41,30 +41,34 @@ export as build : define [buildFont para recursive recursiveCodes] : begin
 		return nothing
 	
 	define metrics : calculateMetrics para
-	define [object globalTransform MIDDLE CAP XH SB RIGHTSB CONTRAST STROKE SUPERNESS WIDTH TANSLANT OVERLAYPOS DESCENDER parenMid parenTop parenBot operTop operBot plusTop plusBot operMid] metrics
+	define [object globalTransform MIDDLE CAP XH SB RIGHTSB CONTRAST STROKE SUPERNESS WIDTH TANSLANT OVERLAYPOS DESCENDER MVERTSTROKE_D symbolMid parenTop parenBot operTop operBot plusTop plusBot tackTop tackBot] metrics
 
 	# Anchor parameters
 	define [object MARK BASE] Anchor
 	define {AS_BASE ALSO_METRICS} {'AS-BASE' 'ALSO-METRICS'}
 
-	define markset : do
+	define [MarksetDiv p] : begin
+		define middle : p * MIDDLE
+		define rightSB : WIDTH * p - SB
 		define [ta anchor] : return : new Anchor
 			* (anchor.x * globalTransform.xx + anchor.y * TANSLANT + globalTransform.x)
 			* (anchor.x * globalTransform.xy + anchor.y * globalTransform.yy + globalTransform.y)
 			* anchor.type
 
-		define markAboveLower       {.anchors {.above       [ta : new Anchor MIDDLE  XH        BASE]}}
-		define markAboveOper        {.anchors {.above       [ta : new Anchor MIDDLE  operTop   BASE]}}
-		define markAbovePlus        {.anchors {.above       [ta : new Anchor MIDDLE  plusTop   BASE]}}
-		define markAboveCap         {.anchors {.above       [ta : new Anchor MIDDLE  CAP       BASE]}}
-		define markBelowLower       {.anchors {.below       [ta : new Anchor MIDDLE  DESCENDER BASE]}}
-		define markBelowOper        {.anchors {.below       [ta : new Anchor MIDDLE  operBot   BASE]}}
-		define markBelowPlus        {.anchors {.below       [ta : new Anchor MIDDLE  plusBot   BASE]}}
-		define markBelowZero        {.anchors {.below       [ta : new Anchor MIDDLE  0         BASE]}}
-		define markToprightLower    {.anchors {.topright    [ta : new Anchor RIGHTSB XH        BASE]}}
-		define markToprightCap      {.anchors {.topright    [ta : new Anchor RIGHTSB CAP       BASE]}}
-		define markBottomrightLower {.anchors {.bottomright [ta : new Anchor RIGHTSB DESCENDER BASE]}}
-		define markBottomrightZero  {.anchors {.bottomright [ta : new Anchor RIGHTSB 0         BASE]}}
+		define markAboveLower       {.anchors {.above       [ta : new Anchor middle  XH        BASE]}}
+		define markAboveOper        {.anchors {.above       [ta : new Anchor middle  operTop   BASE]}}
+		define markAboveTack        {.anchors {.above       [ta : new Anchor middle  tackTop  BASE]}}
+		define markAbovePlus        {.anchors {.above       [ta : new Anchor middle  plusTop   BASE]}}
+		define markAboveCap         {.anchors {.above       [ta : new Anchor middle  CAP       BASE]}}
+		define markBelowLower       {.anchors {.below       [ta : new Anchor middle  DESCENDER BASE]}}
+		define markBelowTack        {.anchors {.below       [ta : new Anchor middle  tackBot  BASE]}}
+		define markBelowOper        {.anchors {.below       [ta : new Anchor middle  operBot   BASE]}}
+		define markBelowPlus        {.anchors {.below       [ta : new Anchor middle  plusBot   BASE]}}
+		define markBelowZero        {.anchors {.below       [ta : new Anchor middle  0         BASE]}}
+		define markToprightLower    {.anchors {.topright    [ta : new Anchor rightSB XH        BASE]}}
+		define markToprightCap      {.anchors {.topright    [ta : new Anchor rightSB CAP       BASE]}}
+		define markBottomrightLower {.anchors {.bottomright [ta : new Anchor rightSB DESCENDER BASE]}}
+		define markBottomrightZero  {.anchors {.bottomright [ta : new Anchor rightSB 0         BASE]}}
 
 		define [buildStandardMarkSet] : begin
 			local a : compsiteMarkSet.apply null arguments
@@ -83,10 +87,22 @@ export as build : define [buildFont para recursive recursiveCodes] : begin
 			b       : buildStandardMarkSet markAboveCap markBelowZero markToprightCap markBottomrightZero
 			e       : buildStandardMarkSet markAboveLower markBelowZero markToprightLower markBottomrightZero
 			oper    : buildStandardMarkSet markAboveOper markBelowOper markToprightLower markBottomrightZero
+			tack    : buildStandardMarkSet markAboveTack markBelowTack markToprightLower markBottomrightZero
 			plus    : buildStandardMarkSet markAbovePlus markBelowPlus markToprightLower markBottomrightZero
 			p       : buildStandardMarkSet markAboveLower markBelowLower markToprightLower markBottomrightLower
 			if      : buildStandardMarkSet markAboveCap markBelowLower markToprightCap markBottomrightLower
 
+	define markset : MarksetDiv 1
+
+	define [DivFrame _div] : begin
+		local div : fallback _div 1
+		return : object
+			div div
+			width : WIDTH * div
+			middle : MIDDLE * div
+			rightSB : WIDTH * div - SB
+			mvs : MVERTSTROKE_D div
+			markSet: MarksetDiv div
 
 	### Glyph slots and dependency profile generation (used for recursive subfonts)
 	local dependencyProfile {.}
@@ -187,29 +203,29 @@ export as build : define [buildFont para recursive recursiveCodes] : begin
 		save 'space' ' '
 	
 	# IDKY, but wrapping "metrics" prevents Node.js on Arch modifying it.
-	define capture : object [metrics : Object.create metrics] $NamedParameterPair$ $donothing$ para recursive recursiveCodes variantSelector font glyphs glyphList unicodeGlyphs create-glyph $save$ save-glyph spirofns markset MARK BASE AS_BASE ALSO_METRICS pickHash dependencyProfile getDependencyProfile buildFont newtemp tagged TempFont includeGlyphPart compsiteMarkSet
+	define capture : object [metrics : Object.create metrics] $NamedParameterPair$ $donothing$ para recursive recursiveCodes variantSelector font glyphs glyphList unicodeGlyphs create-glyph $save$ save-glyph spirofns markset MARK BASE AS_BASE ALSO_METRICS pickHash dependencyProfile getDependencyProfile buildFont newtemp tagged TempFont includeGlyphPart compsiteMarkSet MarksetDiv DivFrame
 
 	### HERE WE GO
-	set capture.commonShapes : [import './glyphs/common-shapes.js'].apply.call capture
-	set capture.overmarks : [import './glyphs/overmarks.js'].apply.call capture
+	set capture.commonShapes : [import '../glyphs/common-shapes.js'].apply.call capture
+	set capture.overmarks : [import '../glyphs/overmarks.js'].apply.call capture
 
 	# Unified letters
-	set capture.letterBasic : [import './glyphs/letters-unified-basic.js'].apply.call capture
-	set capture.letterExt : [import './glyphs/letters-unified-extended.js'].apply.call capture
+	set capture.letterBasic : [import '../glyphs/letters-unified-basic.js'].apply.call capture
+	set capture.letterExt : [import '../glyphs/letters-unified-extended.js'].apply.call capture
 
 	# Numbers
-	[import './glyphs/numbers.js'].apply.call capture
+	[import '../glyphs/numbers.js'].apply.call capture
 
 	# Symbols
-	[import './glyphs/symbol-punctuation.js'].apply.call capture
-	set capture.geometricSymbols : [import './glyphs/symbol-geometric.js'].apply.call capture
-	[import './glyphs/symbol-math.js'].apply.call capture
-	[import './glyphs/symbol-letter.js'].apply.call capture
-	[import './glyphs/symbol-braille.js'].apply.call capture
-	[import './glyphs/symbol-other.js'].apply.call capture
+	[import '../glyphs/symbol-punctuation.js'].apply.call capture
+	set capture.geometricSymbols : [import '../glyphs/symbol-geometric.js'].apply.call capture
+	[import '../glyphs/symbol-math.js'].apply.call capture
+	[import '../glyphs/symbol-letter.js'].apply.call capture
+	[import '../glyphs/symbol-braille.js'].apply.call capture
+	[import '../glyphs/symbol-other.js'].apply.call capture
 	
 	# Autobuilds
-	[import './glyphs/autobuilds.js'].apply.call capture
+	[import '../glyphs/autobuilds.js'].apply.call capture
 
 	if [not recursive] : begin
 		set {.GSUB font.GSUB .GPOS font.GPOS .GDEF font.GDEF} : Features.apply para glyphs glyphList unicodeGlyphs

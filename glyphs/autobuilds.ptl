@@ -312,7 +312,7 @@ export : define [apply] : begin
 				include : OShape top bot left right sw (SMALLSMOOTHA * width / WIDTH) (SMALLSMOOTHB * width / WIDTH)
 
 				apply-transform : Upright
-				apply-transform : Translate 0 (parenMid - CAP * dscale / 2)
+				apply-transform : Translate 0 (symbolMid - CAP * dscale / 2)
 				apply-transform : Italify
 
 	define [createInsetCircledGlyphs records] : if [not recursive] : begin
@@ -327,7 +327,7 @@ export : define [apply] : begin
 					circleInner dscale miniatureFont unicode parts width bal baly
 
 				apply-transform : Upright
-				apply-transform : Translate 0 (parenMid - CAP * dscale / 2)
+				apply-transform : Translate 0 (symbolMid - CAP * dscale / 2)
 				apply-transform : Italify
 
 	define [createDoubleCircledGlyphs records] : if [not recursive] : begin
@@ -350,11 +350,11 @@ export : define [apply] : begin
 					SMALLSMOOTHB * width / WIDTH
 
 				apply-transform : Upright
-				apply-transform : Translate 0 (parenMid - CAP * dscale / 2)
+				apply-transform : Translate 0 (symbolMid - CAP * dscale / 2)
 				apply-transform : Italify
 
 	define [bracedDottdeDimens width] : begin
-		define sw [adviceBlackness 5]
+		define sw : Math.max (WIDTH * 0.075) [adviceBlackness 5]
 		define dscale : linreg WIDTH 0.55 UPM 0.65 width
 		define pscale : linreg WIDTH 0.6 UPM 0.75 width
 		define l : [Math.max (SB + O * 3) (width / 2 - CAP / 2 * dscale - sw * 2.5)] + OX
@@ -400,30 +400,30 @@ export : define [apply] : begin
 					if bal : set shift : CAP / 2 - [mix baly gMiddleY bal]
 					: else : set shift : CAP / 2 - gMiddleY
 
-				apply-transform : Translate (width / 2) (parenMid * pscale - (CAP / 2 - shift) * dscale)
+				apply-transform : Translate (width / 2) (symbolMid * pscale - (CAP / 2 - shift) * dscale)
 				apply-transform : Italify
 				set currentGlyph.cmpPriority 11
 				refair this
 				set-width 0
 
 			sketch
-				local s : TANSLANT * parenMid
+				local s : TANSLANT * symbolMid
 				set-width width
 				include lg
 				include : dispiro
 					widths.lhs sw
 					g4 ([mix l r 0.15] - s) (parenTop * pscale)
-					g4.down.mid (l - s + O) (parenMid * pscale)
+					g4.down.mid (l - s + O) (symbolMid * pscale)
 					g4 ([mix l r 0.15] - s) (parenBot * pscale)
 				
 				include : dispiro
 					widths.rhs sw
 					g4 ([mix r l 0.15] + s) (parenTop * pscale)
-					g4.down.mid (r + s - O) (parenMid * pscale)
+					g4.down.mid (r + s - O) (symbolMid * pscale)
 					g4 ([mix r l 0.15] + s) (parenBot * pscale)
 					
 				include : Upright
-				include : Translate 0 (parenMid - parenMid * pscale)
+				include : Translate 0 (symbolMid - symbolMid * pscale)
 				include : Italify
 				
 				save gn unicode
@@ -505,6 +505,7 @@ export : define [apply] : begin
 		foreach {unicode glyphid tfm} [items-of records] : create-glyph [suggestName : 'smcp' + glyphid] : glyph-construction
 			if unicode : assign-unicode unicode
 			include sf.(glyphid) AS_BASE
+			set-width sf.(glyphid).advanceWidth
 			if tfm : include tfm
 
 	define [createMedievalCombs records] : if [not recursive] : begin
@@ -543,7 +544,7 @@ export : define [apply] : begin
 					apply-transform : Upright
 					apply-transform : Translate (- miniatureFont.(numid).advanceWidth / 2) 0
 					apply-transform : Scale (CAP / [fallback height CAP] * scaleFactor)
-					apply-transform : Translate MIDDLE (parenMid + dist / 2)
+					apply-transform : Translate MIDDLE (symbolMid + dist / 2)
 					apply-transform : Italify
 					refair this
 
@@ -553,7 +554,7 @@ export : define [apply] : begin
 					apply-transform : Upright
 					apply-transform : Translate (- miniatureFont.(denid).advanceWidth / 2) 0
 					apply-transform : Scale (CAP / [fallback height CAP] * scaleFactor)
-					apply-transform : Translate MIDDLE (parenMid - CAP * scaleFactor - dist / 2)
+					apply-transform : Translate MIDDLE (symbolMid - CAP * scaleFactor - dist / 2)
 					apply-transform : Italify
 					refair this
 
@@ -562,7 +563,7 @@ export : define [apply] : begin
 			save-glyph [suggestName : numid + 'over' + denid] unicode : glyph-construction
 				include glyphs.(numid + ".numpart")
 				include glyphs.(denid + ".denpart")
-				include : HBar SB RIGHTSB parenMid (fine * 0.75)
+				include : HBar SB RIGHTSB symbolMid (fine * 0.75)
 
 	createSMCPs : list
 		list 0x1D00 'A'
@@ -596,6 +597,7 @@ export : define [apply] : begin
 		list 0x1D2B 'cyrEl'
 		list 0xA730 'F'
 		list 0xA731 'S'
+		list 0xA7AF 'Q'
 		
 	createSuperscripts : list
 		list 0x2070 'zero'
@@ -858,11 +860,14 @@ export : define [apply] : begin
 		list 0x1DF4 'udieresis'
 
 	# Unicode Ligatures
-	define [createLigatures shrink1 shrink2 wadj1 wadj2 records] : if [not recursive] : begin
+	define [createLigatures _shrink1 _shrink2 wadj1 wadj2 records] : if [not recursive] : begin
 		local pendingGlyphs1 : records.map : [record] => record.1
 		local pendingGlyphs2 : records.map : [record] => record.2
-		local df1 : Thinner pendingGlyphs1 [if (para.spacing > 1) 1 shrink1]
-		local df2 : Thinner pendingGlyphs2 [if (para.spacing > 1) 1 shrink2]
+		local wide : para.spaing > 1 || para.diversityW > 1
+		local shrink1 : if (wide) 1 [clamp 0 1 (_shrink1 * para.diversityW)]
+		local shrink2 : if (wide) 1 [clamp 0 1 (_shrink2 * para.diversityW)]
+		local df1 : Thinner pendingGlyphs1 shrink1
+		local df2 : Thinner pendingGlyphs2 shrink2
 
 		foreach [{unicode c1 c2 mark} : items-of records] : begin
 			local glyphName "\(c1)_\(c2)"
@@ -870,7 +875,7 @@ export : define [apply] : begin
 				local j 2
 				while glyphs.(glyphName + j) : inc j
 				set glyphName (glyphName + j)
-			if (para.spacing > 1) : begin
+			if wide : begin
 				sketch
 					include df2.(c2)
 					include : Translate WIDTH 0
@@ -879,19 +884,20 @@ export : define [apply] : begin
 					save glyphName unicode
 			: else
 				local kern : SB * 7/8 * (shrink1 + shrink2)
-				local refw : WIDTH * (shrink1 * wadj1 + shrink2 * wadj2) - kern
+				local refW : WIDTH * (shrink1 * wadj1 + shrink2 * wadj2) - kern
+				local targetW : WIDTH * para.diversityW
 				sketch
 					include df2.(c2)
 					include : Translate (WIDTH * shrink1 * wadj1 - kern) 0
 					include df1.(c1)
 					include : Translate (-WIDTH * shrink1 * (1 - wadj1) / 2) 0
 					include : Upright
-					include : Translate (-refw / 2) 0
-					include : Scale ((WIDTH - SB * 1.25) / (WIDTH - SB * 2) * WIDTH / refw) 1
-					include : Translate (WIDTH / 2) 0
+					include : Translate (-refW / 2) 0
+					include : Scale ((targetW - SB * 1.25) / (targetW - SB * 2) * targetW / refW) 1
+					include : Translate (targetW / 2) 0
 					include : Italify
 					
-					if mark : include mark
+					if mark : include [MarksetDiv para.diversityW].(mark)
 					save glyphName unicode
 
 	define stdShrink : clamp 0.75 0.9 : linreg 72 0.75 108 0.9 STROKE
@@ -917,8 +923,8 @@ export : define [apply] : begin
 		list 0x2A9 'f' 'eng'
 		list 0x2AA 'l' 's'
 		list 0x2AB 'l' 'z'
-		list 0x478 'O' 'y' markset.if
-		list 0x479 'o' 'y' markset.p
+		list 0x478 'O' 'y' 'if'
+		list 0x479 'o' 'y' 'p'
 		list 0x20A7 'P' 's'
 		list 0x20A8 'R' 's'
 	createLigatures 0.7 0.8 0.75 0.9 : list
