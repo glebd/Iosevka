@@ -1,2 +1,2 @@
 #!/bin/sh -x
-npm run build -- ttf:iosevka-wide
+npm run build -- ttf::iosevka-wide
