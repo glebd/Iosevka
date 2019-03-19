@@ -5,18 +5,18 @@ manufacturer = 'Belleve Invis'
 designer = 'Belleve Invis'
 description = 'Spatial efficient monospace font family for programming. Built from code. http://be5invis.github.io/Iosevka'
 
-leading = 1200     # Default line height times 1000.
+leading = 1000     # Default line height times 1000.
 descenderPad = 0   # Additional line height, added to descender.
 width = 490        # Character width. Increase this if you think that Iosevka is too narrow.
-cap = 710          # Cap height (as well as ascender).
-xheight = 520      # X-height.
+cap = 700          # Cap height (as well as ascender).
+xheight = 510      # X-height.
 #descender = -205  # Depth of descender. Currently unused.
 
-ideoMid  = 365
-symbolMid = 365    # Center of parens, maths, geometrics...
-parenSize = 1066   # Size of parens, brackets, braces, slashes, etc.
-operSize = 852     # Size of "taller" mathematical operators (cups, etc.)
-tackSize = 800     # Size of logical operators (tacks, etc.)
+ideoMid  = 350
+symbolMid = 300    # Center of parens, maths, geometrics...
+parenSize = 900    # Size of parens, brackets, braces, slashes, etc.
+operSize = 700     # Size of "taller" mathematical operators (cups, etc.)
+tackSize = 700     # Size of logical operators (tacks, etc.)
 
 contrast = 1.11111 # Stroke width contrast.
 essx = 1.12        # Contrast of the middle of 'S'.

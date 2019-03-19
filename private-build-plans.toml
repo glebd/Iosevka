@@ -1,3 +1,14 @@
 [buildPlans.iosevka-wide]                         # <iosevka-wide> is your plan name
 family = "Iosevka Wide"                           # Font menu family name
-design = ["expanded", "v-asterisk-low", "v-dollar-open", "v-numbersign-slanted", "v-at-fourfold", "cv46", "cv61"]
+design = ["expanded", "v-asterisk-low", "v-dollar-open", "v-numbersign-slanted", "cv46", "cv61"]
+
+[buildPlans.iosevka-low]
+family = "Iosevka Low"
+design = ["expanded", "v-asterisk-low", "v-dollar-open", "v-numbersign-slanted", "cv46", "cv61", "leading-1000"]
+cap = 700
+xheight = 510
+ideoMid  = 350
+symbolMid = 300
+parenSize = 900
+operSize = 700
+tackSize = 700
